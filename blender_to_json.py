@@ -15,8 +15,8 @@ if obj and obj.type == 'MESH':
         
     for v in obj.data.vertices:
         vertices.append(v.co.x)
-        vertices.append(v.co.y)
         vertices.append(v.co.z)
+        vertices.append(v.co.y)
     
     for face in obj.data.polygons:
         indices.append(face.vertices[0])
