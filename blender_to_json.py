@@ -7,21 +7,27 @@ desktop = os.path.expanduser("~/Desktop")
 output_file = desktop + '/file.json'
 
 
-obj = bpy.context.active_object
+object = bpy.context.active_object
 
-if obj and obj.type == 'MESH':
+if object and object.type == 'MESH':
+    mesh = object.data
     vertices = []
     indices = []
         
-    for v in obj.data.vertices:
+    for v in mesh.vertices:
         vertices.append(v.co.x)
         vertices.append(v.co.z)
         vertices.append(v.co.y)
     
-    for face in obj.data.polygons:
-        indices.append(face.vertices[0])
-        indices.append(face.vertices[1])
-        indices.append(face.vertices[2])
+    for face in mesh.polygons:
+        if len(face.vertices) == 3:
+            indices.extend([face.vertices[0], face.vertices[1], face.vertices[2]])
+        elif len(face.vertices) > 3:
+            vertex_1 = face.vertices[0]
+            for i in range(len(face.vertices)-2):
+                vertex_2 = face.vertices[i+1]
+                vertex_3 = face.vertices[i+2]
+                indices.extend([vertex_1, vertex_2, vertex_3])
     
     data = {
         "vertices" : vertices,
