@@ -13,37 +13,37 @@ if object and object.type == 'MESH':
     mesh = object.data
     
     vertices = []
+    uv_coords = []
     indices = []
-        
-    for v in mesh.vertices:
-        vertices.append(v.co.x)
-        vertices.append(v.co.z)
-        vertices.append(v.co.y)
     
     uv_layer = mesh.uv_layers.active.data
-    uv_coords = [None] * int((len(vertices)/3)*2)
     
-    looked_at = {}
+    index_count = 0
     for face in mesh.polygons:
-        for vertex_index in face.vertices:
-            if vertex_index in looked_at:
-                continue
-            looked_at[vertex_index] = 0
-            
-            uv_coords[vertex_index*2] = uv_layer[vertex_index].uv.x
-            uv_coords[vertex_index*2+1] = uv_layer[vertex_index].uv.y
         
+        for loop_index, vertex_index in enumerate(face.vertices):
+            vertex = mesh.vertices[vertex_index]
+            vertices.append(vertex.co.x)
+            vertices.append(vertex.co.z)
+            vertices.append(vertex.co.y)
+            
+            uv_coord = uv_layer[face.loop_indices[loop_index]].uv
+            uv_coords.extend([uv_coord.x, uv_coord.y])
+            
         if len(face.vertices) == 3:
-            indices.extend([face.vertices[0], face.vertices[1], face.vertices[2]])
+            indices.extend([face.vertices[0] + index_count, face.vertices[1] + index_count, face.vertices[2] + index_count])
         elif len(face.vertices) > 3:
-            vertex_1 = face.vertices[0]
+            vertex_1 = face.vertices[0] + index_count
             for i in range(len(face.vertices)-2):
-                vertex_2 = face.vertices[i+1]
-                vertex_3 = face.vertices[i+2]
+                vertex_2 = face.vertices[i+1] + index_count
+                vertex_3 = face.vertices[i+2] + index_count
                 indices.extend([vertex_1, vertex_2, vertex_3])
+        
+        index_count += 4
     
     print(len(vertices))
-    print(len(uv_coords))
+    print(len(indices))
+    print(len(vertices))
     
     data = {
         "vertices" : vertices,
