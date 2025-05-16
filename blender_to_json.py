@@ -6,6 +6,7 @@ desktop = os.path.expanduser("~/Desktop")
 
 output_file = desktop + '/file.json'
 
+bpy.ops.object.mode_set(mode='OBJECT')
 
 object = bpy.context.active_object
 
@@ -13,11 +14,30 @@ if object and object.type == 'MESH':
     mesh = object.data
     
     vertices = []
+    normals = []
+    vertices_bones = []
+    vertices_weights = []
+    
     
     for v in mesh.vertices:
         vertices.append(v.co.x)
         vertices.append(v.co.z)
         vertices.append(v.co.y)
+        
+        normals.append(v.normal.x)
+        normals.append(v.normal.z)
+        normals.append(v.normal.y)
+        
+        bones = []
+        weights = []
+        
+        for group in v.groups:
+            bones.append(group.group)
+            weights.append(group.weight)    
+            
+        vertices_bones.append(bones)
+        vertices_weights.append(weights)
+        
     
     faces = []
     uv_layer = mesh.uv_layers.active.data
@@ -40,6 +60,9 @@ if object and object.type == 'MESH':
     
     data = {
         "vertices" : vertices,
+        "vertices_bones" : vertices_bones,
+        "vertices_weights" : vertices_weights,
+        "normals" : normals,
         "faces" : faces
     }
     
