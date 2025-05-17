@@ -10,8 +10,40 @@ bpy.ops.object.mode_set(mode='OBJECT')
 
 object = bpy.context.active_object
 
+def recursive_traverse(bone, parent=None):
+    result = [(bone.name, parent)]
+        
+    # Only process children if they exist
+    if hasattr(bone, 'children'):
+        for child in bone.children:
+            result.extend(recursive_traverse(child, bone.name))
+                
+    return result
+
+def get_armature_hierarchy(armature):
+    # Start traversal from root bones (bones without parents)
+    hierarchy = []
+    for bone in armature.bones:
+        if not bone.parent:
+            hierarchy.extend(recursive_traverse(bone))
+            
+    return hierarchy
+
+
 if object and object.type == 'MESH':
     mesh = object.data
+    armature = None
+    
+    if object.parent and object.parent.type == 'ARMATURE':
+         armature = object.parent.data
+         
+    hierarchy = get_armature_hierarchy(armature)
+    bones = []
+    for bone_name, parent_name in hierarchy:
+        bone = []
+        bone.append(bone_name)
+        bone.append(parent_name)
+        bones.append(bone)
     
     vertices = []
     normals = []
@@ -28,15 +60,15 @@ if object and object.type == 'MESH':
         normals.append(v.normal.z)
         normals.append(v.normal.y)
         
-        bones = []
-        weights = []
+        vertex_groups = []
+        vertex_weights = []
         
         for group in v.groups:
-            bones.append(group.group)
-            weights.append(group.weight)    
+            vertex_groups.append(object.vertex_groups[group.group].name)
+            vertex_weights.append(group.weight)    
             
-        vertices_bones.append(bones)
-        vertices_weights.append(weights)
+        vertices_bones.append(vertex_groups)
+        vertices_weights.append(vertex_weights)
         
     
     faces = []
@@ -63,7 +95,8 @@ if object and object.type == 'MESH':
         "vertices_bones" : vertices_bones,
         "vertices_weights" : vertices_weights,
         "normals" : normals,
-        "faces" : faces
+        "faces" : faces,
+        "bones" : bones
     }
     
     with open(output_file, 'w') as file:
