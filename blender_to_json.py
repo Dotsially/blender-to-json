@@ -32,24 +32,11 @@ def get_armature_hierarchy(armature):
 
 if object and object.type == 'MESH':
     mesh = object.data
-    armature = None
-    
-    if object.parent and object.parent.type == 'ARMATURE':
-         armature = object.parent.data
-         
-    hierarchy = get_armature_hierarchy(armature)
-    bones = []
-    for bone_name, parent_name in hierarchy:
-        bone = []
-        bone.append(bone_name)
-        bone.append(parent_name)
-        bones.append(bone)
     
     vertices = []
     normals = []
     vertices_bones = []
     vertices_weights = []
-    
     
     for v in mesh.vertices:
         vertices.append(v.co.x)
@@ -88,7 +75,21 @@ if object and object.type == 'MESH':
             "indices" : indices    
         }
         
-        faces.append(face)        
+        faces.append(face)     
+        
+        
+    armature = None
+    bones = []
+    if object.parent and object.parent.type == 'ARMATURE':
+        armature = object.parent.data 
+        hierarchy = get_armature_hierarchy(armature)
+        for bone_name, parent_name in hierarchy:
+            bone = []
+            bone.append(bone_name)
+            bone.append(parent_name)
+            bones.append(bone)
+    
+            
     
     data = {
         "vertices" : vertices,
