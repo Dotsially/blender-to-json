@@ -11,12 +11,19 @@ bpy.ops.object.mode_set(mode='OBJECT')
 object = bpy.context.active_object
 
 def recursive_traverse(bone, parent=None):
-    result = [(bone.name, parent)]
+    bone_location  = bone.head_local
+    if parent:
+        bone_location = bone.head_local - parent.head_local
+    
+    
+    result = [(bone.name, bone_location, None)] 
+    if parent:
+        result = [(bone.name, bone_location, parent.name)] 
         
     # Only process children if they exist
     if hasattr(bone, 'children'):
         for child in bone.children:
-            result.extend(recursive_traverse(child, bone.name))
+            result.extend(recursive_traverse(child, bone))
                 
     return result
 
@@ -83,10 +90,13 @@ if object and object.type == 'MESH':
     if object.parent and object.parent.type == 'ARMATURE':
         armature = object.parent.data 
         hierarchy = get_armature_hierarchy(armature)
-        for bone_name, parent_name in hierarchy:
-            bone = []
-            bone.append(bone_name)
-            bone.append(parent_name)
+        for bone_name, bone_location, parent_name in hierarchy:
+            bone = {
+                "name" : bone_name,
+                "location" : [bone_location.x, bone_location.z, bone_location.y],
+                "parent" : parent_name
+            }
+            
             bones.append(bone)
     
             
