@@ -12,8 +12,6 @@ object = bpy.context.active_object
 
 def recursive_traverse(bone, parent=None):
     bone_location  = bone.head_local
-    if parent:
-        bone_location = bone.head_local - parent.head_local
     
     
     result = [(bone.name, bone_location, None)] 
