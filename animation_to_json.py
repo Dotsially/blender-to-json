@@ -1,56 +1,65 @@
 import bpy
-from mathutils import Vector, Quaternion
+from collections import defaultdict
+import json
+import os
+
+
+action_name = "UnTpose"
+desktop = os.path.expanduser("~/Desktop")
+output_file = desktop + "/" + action_name + ".json"
+
 
 def print_armature_keyframes(action_name):
-    # Get the action
     action = bpy.data.actions.get(action_name)
     if not action:
         print(f"Action '{action_name}' not found")
         return
-        
-    # Print header
-    print(f"\n=== Keyframe Data for Action: {action_name} ===\n")
-    
-    # Process each bone's keyframes
+
+    bones = defaultdict(lambda: defaultdict(lambda: {
+        "position": [0.0, 0.0, 0.0],
+        "rotation": [0.0, 0.0, 0.0, 0.0],
+        "scale": [1.0, 1.0, 1.0]
+    }))
+
     for curve in action.fcurves:
-        # Extract bone name from data path
+        # Parse bone name and channel type
         parts = curve.data_path.split('"')
         if len(parts) < 3:
             continue
-            
-        bone_name = parts[1]
-        channel_type = curve.data_path.split('.')[-1]
-        channel_idx = curve.array_index
-        
-        # Get all keyframe points
-        keyframes = [(kp.co[0], kp.co[1]) for kp in curve.keyframe_points]
-        
-        # Print formatted data
-        print(f"BONE: {bone_name}")
-        print(f"CHANNEL: {channel_type} (Index: {channel_idx})")
-        
-        # Format values based on channel type
-        formatted_values = []
-        for frame, value in keyframes:
-            if 'rotation' in channel_type.lower():
-                # Rotation values (quaternion components)
-                if channel_idx == 0:
-                    suffix = "W"
-                elif channel_idx == 1:
-                    suffix = "X"
-                elif channel_idx == 2:
-                    suffix = "Y"
-                else:
-                    suffix = "Z"
-                formatted_values.append(f"{value:.4f}")
-            else:
-                # Position values (XYZ coordinates)
-                suffix = ['X', 'Y', 'Z'][channel_idx]
-                formatted_values.append(f"{value:.4f}")
-                
-            print(f"Frame {frame:.0f}: {suffix} = {formatted_values[-1]}")
-            
-        print()
 
-# Example usage
-print_armature_keyframes("UnTpose")
+        bone_name = parts[1]
+        property_type = curve.data_path.split('.')[-1]
+        array_index = curve.array_index
+
+        for kp in curve.keyframe_points:
+            frame = int(kp.co[0])
+            value = kp.co[1]
+
+            if property_type == "location":
+                bones[bone_name][frame]["position"][array_index] = value
+            elif property_type == "rotation_quaternion":
+                bones[bone_name][frame]["rotation"][array_index] = value
+            elif property_type == "scale":
+                bones[bone_name][frame]["scale"][array_index] = value
+
+    # Convert to desired structure
+    final_output = {}
+    for bone, frames in bones.items():
+        frame_list = []
+        for frame_number in sorted(frames.keys()):
+            frame_data = frames[frame_number]
+            frame_list.append({
+                "frame_number": frame_number,
+                "position": frame_data["position"],
+                "rotation": frame_data["rotation"],
+                "scale": frame_data["scale"]
+            })
+        final_output[bone] = frame_list
+
+    return final_output
+
+
+animation_string = print_armature_keyframes(action_name)
+
+with open(output_file, 'w') as file:
+        json.dump(animation_string, file)
